@@ -12,7 +12,7 @@ entryPoints:
   https:
     address: ":443"
 serversTransport:
-  insecureSkipVerify: false
+  insecureSkipVerify: true
 providers:
   docker:
     endpoint: "unix:///var/run/docker.sock"
@@ -24,8 +24,6 @@ certificatesResolvers:
     acme:
       email: "${SECRET_ACME_EMAIL}"
       storage: acme.json
-      # caServer: https://acme-v02.api.letsencrypt.org/directory # prod (default)
-      caServer: https://acme-staging-v02.api.letsencrypt.org/directory # staging
       dnsChallenge:
         provider: cloudflare
         resolvers:
