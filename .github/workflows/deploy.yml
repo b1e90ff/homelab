@@ -45,10 +45,20 @@ jobs:
         run: |
           # Get services to process
           if [ "${{ github.event.inputs.services }}" = "all" ]; then
-            # Only find directories that have a docker-compose.yml
-            services=$(find . -maxdepth 2 -type f -name "docker-compose.yml" -exec dirname {} \; | sed 's|^\./||')
+            # Debug: List all files and directories
+            echo "Listing directory contents:"
+            ls -la
+            
+            # Find services with docker-compose.yml
+            services=$(find * -name "docker-compose.yml" -exec dirname {} \;)
+            echo "Found services: $services"
           else
             services="${{ github.event.inputs.services }}"
+          fi
+
+          if [ -z "$services" ]; then
+            echo "Error: No services found!"
+            exit 1
           fi
 
           # Process each service
