@@ -23,14 +23,18 @@ jobs:
       - name: Add known hosts
         id: known-hosts
         run: |
-          KNOWN_HOSTS=$(ssh-keyscan -H ${{ secrets.SSH_HOST }})
-          echo "known_hosts=${KNOWN_HOSTS}" >> $GITHUB_OUTPUT
+          mkdir -p ~/.ssh
+          ssh-keyscan -H ${{ secrets.SSH_HOST }} > known_hosts_temp
+          KNOWN_HOSTS=$(cat known_hosts_temp)
+          echo "KNOWN_HOSTS<<EOF" >> $GITHUB_OUTPUT
+          echo "$KNOWN_HOSTS" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Install SSH key
         uses: shimataro/ssh-key-action@v2
         with:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          known_hosts: ${{ steps.known-hosts.outputs.known_hosts }}
+          known_hosts: ${{ steps.known-hosts.outputs.KNOWN_HOSTS }}
           if_key_exists: fail
 
       - name: Process services
