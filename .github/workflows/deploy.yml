@@ -49,8 +49,8 @@ jobs:
             echo "Listing directory contents:"
             ls -la
             
-            # Find services with docker-compose.yml
-            services=$(find * -name "docker-compose.yml" -exec dirname {} \;)
+            # Find services with docker-compose.yml, excluding hidden directories
+            services=$(find . -type f -name "docker-compose.yml" -not -path "*/\.*/*" -exec dirname {} \; | sed 's|^\./||')
             echo "Found services: $services"
           else
             services="${{ github.event.inputs.services }}"
