@@ -45,7 +45,8 @@ jobs:
         run: |
           # Get services to process
           if [ "${{ github.event.inputs.services }}" = "all" ]; then
-            services=$(find . -type d -name "*" -not -path "." -not -path "./.git*" -exec basename {} \;)
+            # Only find directories that have a docker-compose.yml
+            services=$(find . -maxdepth 2 -type f -name "docker-compose.yml" -exec dirname {} \; | sed 's|^\./||')
           else
             services="${{ github.event.inputs.services }}"
           fi
@@ -76,15 +77,7 @@ jobs:
             fi
 
             # Upload and deploy service
-            if [ -d "$service" ] && [ -f "${service}/docker-compose.yml" ]; then
-              echo "Uploading $service"
-              
-              # Kopiere das komplette Service-Verzeichnis mit allen Unterordnern
-              scp -r "${service}" $SSH_USER@$SSH_HOST:$DEPLOY_PATH/
-              
-              # Deploy service
-              ssh $SSH_USER@$SSH_HOST "cd $DEPLOY_PATH/${service} && docker-compose pull && docker-compose up -d"
-            else
-              echo "Warning: $service directory or docker-compose.yml not found"
-            fi
+            echo "Uploading $service"
+            scp -r "${service}" $SSH_USER@$SSH_HOST:$DEPLOY_PATH/
+            ssh $SSH_USER@$SSH_HOST "cd $DEPLOY_PATH/${service} && docker-compose pull && docker-compose up -d"
           done
