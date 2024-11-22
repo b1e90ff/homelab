@@ -84,6 +84,10 @@ jobs:
 
             # Upload and deploy service
             echo "Uploading $service"
+            
+            # Replace SECRET_ variables in yml files
+            find "${service}" -type f -name "*.yml" -o -name "*.yaml" -exec sed -i -E "s/\\\${SECRET_([^}]+)}/$(eval echo \$\\1)/g" {} +
+            
             scp -r "${service}" $SSH_USER@$SSH_HOST:$DEPLOY_PATH/
             ssh $SSH_USER@$SSH_HOST "cd $DEPLOY_PATH/${service}/. && docker compose pull && docker compose up -d"
           done
