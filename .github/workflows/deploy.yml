@@ -1,0 +1,83 @@
+name: Deploy to Homelab
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm_deploy:
+        description: 'Type "deploy" to confirm deployment'
+        required: true
+        type: string
+      services:
+        description: 'Services to deploy (all, or comma-separated list e.g.: postgres,zitadel)'
+        required: true
+        type: string
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    if: github.event.inputs.confirm_deploy == 'deploy'
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install SSH key
+        uses: shimataro/ssh-key-action@v2
+        with:
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          known_hosts: ${{ secrets.SSH_KNOWN_HOSTS }}
+          if_key_exists: fail
+
+      - name: Process services
+        env:
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+          # Service secrets
+          CF_DNS_API_TOKEN: ${{ secrets.CF_DNS_API_TOKEN }}
+          TRAEFIK_DASHBOARD_CREDENTIALS: ${{ secrets.TRAEFIK_DASHBOARD_CREDENTIALS }}
+          ACME_EMAIL: ${{ secrets.ACME_EMAIL }}
+        run: |
+          # Get services to process
+          if [ "${{ github.event.inputs.services }}" = "all" ]; then
+            services=$(find . -type d -name "*" -not -path "." -not -path "./.git*" -exec basename {} \;)
+          else
+            services="${{ github.event.inputs.services }}"
+          fi
+
+          # Process each service
+          for service in ${services//,/ }; do
+            echo "Processing $service"
+            
+            ssh $SSH_USER@$SSH_HOST "mkdir -p $DEPLOY_PATH/${service}"
+
+            # Create .env file if service has secrets defined
+            if yq eval ".services.${service}" secrets.yml > /dev/null 2>&1; then
+              # Build env file content directly from environment variables
+              env_content=""
+              while read -r secret_name; do
+                # Get value from environment variable
+                secret_value=${!secret_name}
+                if [ ! -z "$secret_value" ]; then
+                  env_content+="${secret_name}='${secret_value}'"$'\n'
+                fi
+              done < <(yq eval ".services.${service}.secrets[]" secrets.yml)
+              
+              # Upload env content directly
+              echo "$env_content" | ssh $SSH_USER@$SSH_HOST "cat > $DEPLOY_PATH/${service}/.env"
+              echo "Created .env file for $service"
+            else
+              echo "No secrets defined for $service"
+            fi
+
+            # Upload and deploy service
+            if [ -d "$service" ] && [ -f "${service}/docker-compose.yml" ]; then
+              echo "Uploading $service"
+              
+              scp -r "${service}"* $SSH_USER@$SSH_HOST:$DEPLOY_PATH/${service}/
+              
+              # Deploy service
+              ssh $SSH_USER@$SSH_HOST "cd $DEPLOY_PATH/${service} && docker-compose pull && docker-compose up -d"
+            else
+              echo "Warning: $service directory or docker-compose.yml not found"
+            fi
+          done
