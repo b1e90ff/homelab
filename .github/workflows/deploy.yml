@@ -43,47 +43,18 @@ jobs:
           TRAEFIK_DASHBOARD_CREDENTIALS: ${{ secrets.TRAEFIK_DASHBOARD_CREDENTIALS }}
           ACME_EMAIL: ${{ secrets.ACME_EMAIL }}
         run: |
+          # Make scripts executable
+          chmod +x scripts/*.sh
+          
           # Get services to process
-          if [ "${{ github.event.inputs.services }}" = "all" ]; then
-            # Find services with docker-compose.yml or docker-compose.yaml
-            services=$(find . -type f \( -name "docker-compose.yml" -o -name "docker-compose.yaml" \) -not -path "*/\.*/*" -exec dirname {} \; | sed 's|^\./||')
-            echo "\nFound services: $services"
-          else
-            services="${{ github.event.inputs.services }}"
-          fi
-
-          if [ -z "$services" ]; then
-            echo "Error: No services found!"
-            exit 1
-          fi
+          services=$(./scripts/get-services.sh "${{ github.event.inputs.services }}")
+          echo "Found services: $services"
 
           # Process each service
           for service in ${services//,/ }; do
             echo "Processing $service"
-            
-            ssh $SSH_USER@$SSH_HOST "mkdir -p $DEPLOY_PATH/${service}"
-
-            # Create .env file if service has secrets defined
-            if yq eval ".services.${service}" secrets.yml > /dev/null 2>&1; then
-              # Build env file content directly from environment variables
-              env_content=""
-              while read -r secret_name; do
-                # Get value from environment variable
-                secret_value=${!secret_name}
-                if [ ! -z "$secret_value" ]; then
-                  env_content+="${secret_name}='${secret_value}'"$'\n'
-                fi
-              done < <(yq eval ".services.${service}.secrets[]" secrets.yml)
-              
-              # Upload env content directly
-              echo "$env_content" | ssh $SSH_USER@$SSH_HOST "cat > $DEPLOY_PATH/${service}/.env"
-              echo "Created .env file for $service"
-            else
-              echo "No secrets defined for $service"
-            fi
-
-            # Upload and deploy service
-            echo "Uploading $service"
-            scp -r "${service}" $SSH_USER@$SSH_HOST:$DEPLOY_PATH/
-            ssh $SSH_USER@$SSH_HOST "cd $DEPLOY_PATH/${service}/. && docker compose pull && docker compose up -d"
+            ./scripts/create-env.sh "$service" "$SSH_USER" "$SSH_HOST" "$DEPLOY_PATH"
+            ./scripts/upload-files.sh "$service" "$SSH_USER" "$SSH_HOST" "$DEPLOY_PATH"
+            ./scripts/deploy-docker-service.sh "$service" "$SSH_USER" "$SSH_HOST" "$DEPLOY_PATH"
+            echo "Done processing $service"
           done
