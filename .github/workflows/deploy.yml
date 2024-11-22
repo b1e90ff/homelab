@@ -45,13 +45,9 @@ jobs:
         run: |
           # Get services to process
           if [ "${{ github.event.inputs.services }}" = "all" ]; then
-            # Debug: List all files and directories
-            echo "Listing directory contents:"
-            ls -la
-            
-            # Find services with docker-compose.yml, excluding hidden directories
-            services=$(find . -type f -name "docker-compose.yml" -not -path "*/\.*/*" -exec dirname {} \; | sed 's|^\./||')
-            echo "Found services: $services"
+            # Find services with docker-compose.yml or docker-compose.yaml
+            services=$(find . -type f \( -name "docker-compose.yml" -o -name "docker-compose.yaml" \) -not -path "*/\.*/*" -exec dirname {} \; | sed 's|^\./||')
+            echo "\nFound services: $services"
           else
             services="${{ github.event.inputs.services }}"
           fi
