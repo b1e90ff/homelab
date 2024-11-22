@@ -79,7 +79,8 @@ jobs:
             if [ -d "$service" ] && [ -f "${service}/docker-compose.yml" ]; then
               echo "Uploading $service"
               
-              scp -r "${service}"* $SSH_USER@$SSH_HOST:$DEPLOY_PATH/${service}/
+              # Kopiere das komplette Service-Verzeichnis mit allen Unterordnern
+              scp -r "${service}" $SSH_USER@$SSH_HOST:$DEPLOY_PATH/
               
               # Deploy service
               ssh $SSH_USER@$SSH_HOST "cd $DEPLOY_PATH/${service} && docker-compose pull && docker-compose up -d"
