@@ -18,4 +18,4 @@ echo "Processing secrets in yaml files for $SERVICE"
 ./scripts/replace-secrets.sh "$SERVICE" "$DEPLOY_PATH"
 
 echo "Uploading $SERVICE"
-rsync -av --delete "${SERVICE}/" $SSH_USER@$SSH_HOST:$DEPLOY_PATH/${SERVICE}/
+rsync -av --include=".*" --delete "${SERVICE}/" $SSH_USER@$SSH_HOST:$DEPLOY_PATH/${SERVICE}/
