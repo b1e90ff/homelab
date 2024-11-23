@@ -20,8 +20,8 @@ find "${SERVICE}" -type f \( -name "*.yml" -o -name "*.yaml" \) ! -name "docker-
     # Create temporary file
     temp_file=$(mktemp)
     
-    # Read the file line by line
-    while IFS= read -r line; do
+    # Read the file line by line and ensure last line is processed
+    while IFS= read -r line || [ -n "$line" ]; do
         # Check if line contains ${SECRET_*} pattern
         if echo "$line" | grep -q '\${SECRET_[^}]*}'; then
             # Extract the secret name without SECRET_ prefix
@@ -32,7 +32,7 @@ find "${SERVICE}" -type f \( -name "*.yml" -o -name "*.yaml" \) ! -name "docker-
             env_var_value=${!env_var_name}
             
             if [ ! -z "$env_var_value" ]; then
-                # Replace ${SECRET_VAR} with actual value
+                # Replace ${SECRET_VAR} with actual value and preserve newline
                 echo "$line" | sed "s/\${SECRET_${secret_name}}/${env_var_value}/" >> "$temp_file"
             else
                 echo "Error: Required secret $env_var_name not found!"
@@ -44,12 +44,15 @@ find "${SERVICE}" -type f \( -name "*.yml" -o -name "*.yaml" \) ! -name "docker-
                 echo "$line" >> "$temp_file"
             fi
         else
+            # Preserve the line as-is
             echo "$line" >> "$temp_file"
         fi
     done < "$file"
     
-    # Replace original file with modified content
-    mv "$temp_file" "$file"
+    # Ensure the final newline is preserved
+    if [ -n "$(tail -c1 "$file")" ]; then
+        echo "" >> "$temp_file"
+    fi
 done
 
 # Check if any secrets were missing and display them
