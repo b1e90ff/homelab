@@ -18,7 +18,7 @@ jobs:
     environment: production
     if: github.event.inputs.confirm_deploy == 'deploy'
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Add known hosts
         run: |
