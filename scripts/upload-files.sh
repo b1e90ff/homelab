@@ -16,7 +16,6 @@ ssh $SSH_USER@$SSH_HOST "mkdir -p $DEPLOY_PATH/../data/$SERVICE"
 
 echo "Processing secrets in yaml files for $SERVICE"
 ./scripts/replace-secrets.sh "$SERVICE" "$DEPLOY_PATH"
-ls -la "$SERVICE"
 
 echo "Uploading $SERVICE"
 rsync -av --include=".*" --delete "${SERVICE}/" $SSH_USER@$SSH_HOST:$DEPLOY_PATH/${SERVICE}/
