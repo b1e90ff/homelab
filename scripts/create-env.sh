@@ -31,3 +31,5 @@ if yq eval ".services.${SERVICE}" secrets.yml > /dev/null 2>&1; then
 else
     echo "No secrets defined for $SERVICE"
 fi
+
+ls -la "$SERVICE"
