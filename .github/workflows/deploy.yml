@@ -59,6 +59,7 @@ jobs:
           # Process each service
           for service in ${services//,/ }; do
             echo "Processing $service"
+            ./scripts/replace-secrets.sh "$service" "$DEPLOY_PATH"
             ./scripts/upload-files.sh "$service" "$SSH_USER" "$SSH_HOST" "$DEPLOY_PATH"
             ./scripts/create-env.sh "$service" "$SSH_USER" "$SSH_HOST" "$DEPLOY_PATH"
             ./scripts/deploy-docker-service.sh "$service" "$SSH_USER" "$SSH_HOST" "$DEPLOY_PATH"
