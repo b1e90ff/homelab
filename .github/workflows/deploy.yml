@@ -43,6 +43,11 @@ jobs:
           TRAEFIK_DASHBOARD_CREDENTIALS: ${{ secrets.TRAEFIK_DASHBOARD_CREDENTIALS }}
           ACME_EMAIL: ${{ secrets.ACME_EMAIL }}
           CROWDSEC_BOUNCER_API_KEY: ${{ secrets.CROWDSEC_BOUNCER_API_KEY }}
+          ZITADEL_FIRST_INSTANCE_ORG_HUMAN_USERNAME: ${{ secrets.ZITADEL_FIRST_INSTANCE_ORG_HUMAN_USERNAME }}
+          ZITADEL_FIRST_INSTANCE_ORG_HUMAN_PASSWORD: ${{ secrets.ZITADEL_FIRST_INSTANCE_ORG_HUMAN_PASSWORD }}
+          ZITADEL_COCKROACH_USERNAME: ${{ secrets.ZITADEL_COCKROACH_USERNAME }}
+          ZITADEL_DOMAIN: ${{ secrets.ZITADEL_DOMAIN }}
+          ZITADEL_MASTERKEY: ${{ secrets.ZITADEL_MASTERKEY }}
         run: |
           # Make scripts executable
           chmod +x scripts/*.sh
