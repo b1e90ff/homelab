@@ -8,56 +8,20 @@ if [ -z "$SERVICE" ] || [ -z "$DEPLOY_PATH" ]; then
     exit 1
 fi
 
-# Track if we found any missing secrets
-missing_secrets=false
-# Array to collect missing secret names
-declare -a missing_secret_list
-
-# Find all yaml/yml files recursively (excluding docker-compose files and logs)
-find "${SERVICE}" -type f \( -name "*.yml" -o -name "*.yaml" \) ! -name "docker-compose.*" ! -path "*/\.*/*" ! -path "*/logs/*" ! -path "*/log/*" -print0 | while IFS= read -r -d '' file; do
-    echo "Checking file: $file"
+# Find all yaml files and process them
+find "${SERVICE}" -type f \( -name "*.yml" -o -name "*.yaml" \) ! -name "docker-compose.*" ! -path "*/\.*/*" ! -path "*/logs/*" -print0 | while IFS= read -r -d '' file; do
+    echo "Processing: $file"
     
-    # Create temporary file
-    temp_file=$(mktemp)
-    
-    # Read the file line by line and ensure last line is processed
-    while IFS= read -r line || [ -n "$line" ]; do
-        # Check if line contains ${SECRET_*} pattern
-        if echo "$line" | grep -q '\${SECRET_[^}]*}'; then
-            # Extract the secret name without SECRET_ prefix
-            secret_name=$(echo "$line" | grep -o '\${SECRET_[^}]*}' | sed 's/\${SECRET_\(.*\)}/\1/')
-            
-            # Get corresponding environment variable without SECRET_ prefix
-            env_var_name=$(echo "$secret_name")
-            env_var_value=${!env_var_name}
-            
-            if [ ! -z "$env_var_value" ]; then
-                # Replace ${SECRET_VAR} with actual value and preserve newline
-                echo "$line" | sed "s/\${SECRET_${secret_name}}/${env_var_value}/" >> "$temp_file"
-            else
-                echo "Error: Required secret $env_var_name not found!"
-                missing_secrets=true
-                # Add to missing secrets list if not already present
-                if [[ ! " ${missing_secret_list[@]} " =~ " ${env_var_name} " ]]; then
-                    missing_secret_list+=("$env_var_name")
-                fi
-                echo "$line" >> "$temp_file"
-            fi
-        else
-            # Preserve the line as-is
-            echo "$line" >> "$temp_file"
+    # Get all SECRET_ variables and replace them
+    grep -o '\${SECRET_[^}]*}' "$file" | sort -u | while read -r secret; do
+        var_name=$(echo "$secret" | sed 's/\${SECRET_\(.*\)}/\1/')
+        var_value=${!var_name}
+        
+        if [ -z "$var_value" ]; then
+            echo "Error: Missing secret $var_name"
+            exit 1
         fi
-    done < "$file"
-    
-    # Ensure the final newline is preserved
-    if [ -n "$(tail -c1 "$file")" ]; then
-        echo "" >> "$temp_file"
-    fi
+        
+        sed -i "s|${secret}|${var_value}|g" "$file"
+    done
 done
-
-# Check if any secrets were missing and display them
-if [ "$missing_secrets" = true ]; then
-    echo -e "\nError: The following secrets are missing:"
-    printf '%s\n' "${missing_secret_list[@]}"
-    exit 1
-fi
