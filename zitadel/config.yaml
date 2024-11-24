@@ -9,7 +9,7 @@ ExternalPort: 443
 
 Database:
   cockroach:
-    Host: 'my-cockroach-db'
+    Host: 'my-cockroach-db:26257'
     User:
       SSL:
         Mode: 'verify-full'

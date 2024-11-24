@@ -13,13 +13,11 @@ services:
       ZITADEL_MASTERKEY: ${ZITADEL_MASTERKEY}
       ZITADEL_FIRSTINSTANCE_ORG_HUMAN_USERNAME: ${ZITADEL_FIRSTINSTANCE_ORG_HUMAN_USERNAME}
       ZITADEL_FIRSTINSTANCE_ORG_HUMAN_PASSWORD: ${ZITADEL_FIRSTINSTANCE_ORG_HUMAN_PASSWORD}
-    ports:
-      - "8080:8080"
     volumes:
       - "./config.yaml:/example-zitadel-config.yaml:ro"
       - "./secrets.yaml:/example-zitadel-secrets.yaml:ro"
       - "./init-steps.yaml:/example-zitadel-init-steps.yaml:ro"
-      - "../data/zitadel/certs:/crdb-certs:ro"
+      - "../data/zitadel/crdb-certs:/crdb-certs:ro"
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.zitadel.entrypoints=http"
@@ -54,19 +52,16 @@ services:
     networks:
       - "zitadel"
     image: "cockroachdb/cockroach:latest"
-    command: "start-single-node --advertise-addr my-cockroach-db"
+    command: "start-single-node --advertise-addr my-cockroach-db --sql-addr my-cockroach-db:26257"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health?ready=1"]
       interval: "10s"
       timeout: "30s"
       retries: 5
       start_period: "20s"
-    ports:
-      - "9090:8080"
-      - "26257:26257"
     volumes:
-      - "certs:/cockroach/certs:rw"
-      - "data:/cockroach/cockroach-data:rw"
+      - "../data/zitadel/crdb-certs:/cockroach/certs:rw"
+      - "../data/zitadel/crdb-data:/cockroach/cockroach-data:rw"
 
 networks:
   zitadel:
