@@ -1,5 +1,5 @@
 x-user-config: &user-config
-  user: "${UID}:${GID}"
+  user: "${UID:-1000}:${GID:-1000}"
   environment:
     UID: "${UID:-1000}"
     GID: "${GID:-1000}"
@@ -21,26 +21,10 @@ services:
       ZITADEL_FIRSTINSTANCE_ORG_HUMAN_USERNAME: ${ZITADEL_FIRSTINSTANCE_ORG_HUMAN_USERNAME}
       ZITADEL_FIRSTINSTANCE_ORG_HUMAN_PASSWORD: ${ZITADEL_FIRSTINSTANCE_ORG_HUMAN_PASSWORD}
     volumes:
-      - type: bind
-        source: ./config.yaml
-        target: /example-zitadel-config.yaml
-        bind:
-          create_host_path: true
-      - type: bind
-        source: ./secrets.yaml
-        target: /example-zitadel-secrets.yaml
-        bind:
-          create_host_path: true
-      - type: bind
-        source: ./init-steps.yaml
-        target: /example-zitadel-init-steps.yaml
-        bind:
-          create_host_path: true
-      - type: bind
-        source: ../data/zitadel/crdb-certs
-        target: /crdb-certs
-        bind:
-          create_host_path: true
+      - "./config.yaml:/example-zitadel-config.yaml:rw"
+      - "./secrets.yaml:/example-zitadel-secrets.yaml:rw"
+      - "./init-steps.yaml:/example-zitadel-init-steps.yaml:rw"
+      - "../data/zitadel/crdb-certs:/crdb-certs:rw"
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.zitadel.entrypoints=http"
@@ -57,6 +41,7 @@ services:
       - "traefik.docker.network=proxy"
 
   certs:
+    <<: *user-config
     image: "cockroachdb/cockroach:latest"
     entrypoint: ["/bin/bash", "-c"]
     command:
@@ -87,16 +72,8 @@ services:
       - "9090:8080"  # Admin UI.
       - "26257:26257"  # SQL port
     volumes:
-      - type: bind
-        source: ../data/zitadel/crdb-certs
-        target: /cockroach/certs
-        bind:
-          create_host_path: true
-      - type: bind
-        source: ../data/zitadel/crdb-data
-        target: /cockroach/cockroach-data
-        bind:
-          create_host_path: true
+      - "../data/zitadel/crdb-certs:/cockroach/certs:rw"
+      - "../data/zitadel/crdb-data:/cockroach/cockroach-data:rw"
 
 networks:
   zitadel:
