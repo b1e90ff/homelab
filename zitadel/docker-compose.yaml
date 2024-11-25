@@ -1,11 +1,17 @@
+x-user-config: &user-config
+  user: "${UID}:${GID}"
+  environment:
+    UID: "${UID:-1000}"
+    GID: "${GID:-1000}"
+
 services:
   zitadel:
+    <<: *user-config
     restart: "always"
     networks:
       - "zitadel"
       - "proxy"
     image: "ghcr.io/zitadel/zitadel:stable"
-    user: "${UID}:${GID}"  # Add user mapping here
     command: 'start-from-init --config /example-zitadel-config.yaml --config /example-zitadel-secrets.yaml --steps /example-zitadel-init-steps.yaml --masterkey "${ZITADEL_MASTERKEY}" --tlsMode external'
     depends_on:
       certs:
@@ -65,11 +71,11 @@ services:
         condition: "service_healthy"
 
   my-cockroach-db:
+    <<: *user-config
     restart: "always"
     networks:
       - "zitadel"
     image: "cockroachdb/cockroach:latest"
-    user: "${UID}:${GID}"  # Use the current user's UID and GID
     command: "start-single-node --advertise-addr my-cockroach-db --sql-addr my-cockroach-db:26257"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health?ready=1"]
