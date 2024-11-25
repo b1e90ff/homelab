@@ -52,6 +52,7 @@ services:
     networks:
       - "zitadel"
     image: "cockroachdb/cockroach:latest"
+    user: "system:system"  # Match your system user
     command: "start-single-node --advertise-addr my-cockroach-db --sql-addr my-cockroach-db:26257"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health?ready=1"]
@@ -63,8 +64,16 @@ services:
       - "9090:8080"  # Admin UI.
       - "26257:26257"  # SQL port
     volumes:
-      - "../data/zitadel/crdb-certs:/cockroach/certs:rw"
-      - "../data/zitadel/crdb-data:/cockroach/cockroach-data:rw"
+      - type: bind
+        source: ../data/zitadel/crdb-certs
+        target: /cockroach/certs
+        bind:
+          create_host_path: true
+      - type: bind
+        source: ../data/zitadel/crdb-data
+        target: /cockroach/cockroach-data
+        bind:
+          create_host_path: true
 
 networks:
   zitadel:
