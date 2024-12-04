@@ -49,14 +49,9 @@ jobs:
           ZITADEL_DOMAIN: ${{ secrets.ZITADEL_DOMAIN }}
           ZITADEL_MASTERKEY: ${{ secrets.ZITADEL_MASTERKEY }}
         run: |
-          # Make scripts executable
           chmod +x scripts/*.sh
-          
-          # Get services to process
           services=$(./scripts/get-services.sh "${{ github.event.inputs.services }}")
           echo "Found services: $services"
-
-          # Process each service
           for service in ${services//,/ }; do
             echo "Processing $service"
             ./scripts/replace-secrets.sh "$service" "$DEPLOY_PATH"

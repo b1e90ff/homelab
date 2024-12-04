@@ -1,12 +1,9 @@
-x-user-config: &user-config
-  user: "${UID:-1000}:${GID:-1000}"
-  environment:
-    UID: "${UID:-1000}"
-    GID: "${GID:-1000}"
-
 services:
   zitadel:
-    <<: *user-config
+    environment:
+      ZITADEL_MASTERKEY: ${ZITADEL_MASTERKEY}
+      ZITADEL_FIRSTINSTANCE_ORG_HUMAN_USERNAME: ${ZITADEL_FIRSTINSTANCE_ORG_HUMAN_USERNAME}
+      ZITADEL_FIRSTINSTANCE_ORG_HUMAN_PASSWORD: ${ZITADEL_FIRSTINSTANCE_ORG_HUMAN_PASSWORD}
     restart: "always"
     networks:
       - "zitadel"
@@ -16,10 +13,6 @@ services:
     depends_on:
       certs:
         condition: "service_completed_successfully"
-    environment:
-      ZITADEL_MASTERKEY: ${ZITADEL_MASTERKEY}
-      ZITADEL_FIRSTINSTANCE_ORG_HUMAN_USERNAME: ${ZITADEL_FIRSTINSTANCE_ORG_HUMAN_USERNAME}
-      ZITADEL_FIRSTINSTANCE_ORG_HUMAN_PASSWORD: ${ZITADEL_FIRSTINSTANCE_ORG_HUMAN_PASSWORD}
     volumes:
       - "./config.yaml:/example-zitadel-config.yaml:rw"
       - "./secrets.yaml:/example-zitadel-secrets.yaml:rw"
@@ -39,9 +32,13 @@ services:
       - "traefik.http.services.zitadel.loadbalancer.passHostHeader=true"
       - "traefik.http.services.zitadel.loadbalancer.server.port=8080"
       - "traefik.docker.network=proxy"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200k"
+        max-file: "10"
 
   certs:
-    <<: *user-config
     image: "cockroachdb/cockroach:latest"
     entrypoint: ["/bin/bash", "-c"]
     command:
@@ -54,14 +51,23 @@ services:
     depends_on:
       my-cockroach-db:
         condition: "service_healthy"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200k"
+        max-file: "10"
 
   my-cockroach-db:
-    <<: *user-config
     restart: "always"
     networks:
       - "zitadel"
     image: "cockroachdb/cockroach:latest"
-    command: "start-single-node --advertise-addr my-cockroach-db --sql-addr my-cockroach-db:26257"
+    command: >
+      /bin/sh -c "
+      mkdir -p /cockroach/certs /cockroach/cockroach-data &&
+      chown -R 1000:1000 /cockroach &&
+      exec cockroach start-single-node --advertise-addr my-cockroach-db --sql-addr my-cockroach-db:26257
+      "
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health?ready=1"]
       interval: "10s"
@@ -74,6 +80,11 @@ services:
     volumes:
       - "../data/zitadel/crdb-certs:/cockroach/certs:rw"
       - "../data/zitadel/crdb-data:/cockroach/cockroach-data:rw"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200k"
+        max-file: "10"
 
 networks:
   zitadel:
