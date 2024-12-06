@@ -43,7 +43,7 @@ services:
     entrypoint: ["/bin/bash", "-c"]
     command:
       [
-        "cp /certs/* /zitadel-certs/ && cockroach cert create-client --overwrite --certs-dir /zitadel-certs/ --ca-key /zitadel-certs/ca.key zitadel_user && chmod -R 600 /zitadel-certs/node.key && chmod -R 777 /zitadel-certs/*",
+        "cp /certs/* /zitadel-certs/ && cockroach cert create-client --overwrite --certs-dir /zitadel-certs/ --ca-key /zitadel-certs/ca.key zitadel_user && chmod -R 600 /zitadel-certs/node.key && chown -R $(id -u):$(id -g) /zitadel-certs/*",
       ]
     volumes:
       - "certs:/certs:ro"
