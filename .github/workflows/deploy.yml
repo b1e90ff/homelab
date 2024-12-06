@@ -3,10 +3,6 @@ name: Deploy to Homelab
 on:
   workflow_dispatch:
     inputs:
-      confirm_deploy:
-        description: 'Type "deploy" to confirm deployment'
-        required: true
-        type: string
       services:
         description: 'Services to deploy (all, or comma-separated list e.g.: postgres,zitadel)'
         required: true
@@ -16,7 +12,6 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     environment: production
-    if: github.event.inputs.confirm_deploy == 'deploy'
     steps:
       - uses: actions/checkout@v4
 
