@@ -43,7 +43,7 @@ services:
     entrypoint: ["/bin/bash", "-c"]
     command:
       [
-        "cp /certs/* /zitadel-certs/ && cockroach cert create-client --overwrite --certs-dir /zitadel-certs/ --ca-key /zitadel-certs/ca.key zitadel_user && chown 1000:1000 /zitadel-certs/*",
+        "cp /certs/* /zitadel-certs/ && cockroach cert create-client --overwrite --certs-dir /zitadel-certs/ --ca-key /zitadel-certs/ca.key zitadel_user && chmod -R 777 /zitadel-certs/*",
       ]
     volumes:
       - "certs:/certs:ro"
@@ -62,21 +62,13 @@ services:
     networks:
       - "zitadel"
     image: "cockroachdb/cockroach:latest"
-    command: >
-      /bin/sh -c "
-      mkdir -p /cockroach/certs /cockroach/cockroach-data &&
-      chown -R 1000:1000 /cockroach &&
-      exec cockroach start-single-node --advertise-addr my-cockroach-db --sql-addr my-cockroach-db:26257
-      "
+    command: "start-single-node --advertise-addr my-cockroach-db"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health?ready=1"]
       interval: "10s"
       timeout: "30s"
       retries: 5
       start_period: "20s"
-    ports:
-      - "9090:8080"  # Admin UI.
-      - "26257:26257"  # SQL port
     volumes:
       - "../data/zitadel/crdb-certs:/cockroach/certs:rw"
       - "../data/zitadel/crdb-data:/cockroach/cockroach-data:rw"
