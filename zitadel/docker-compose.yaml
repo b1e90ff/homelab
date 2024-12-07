@@ -14,21 +14,18 @@ services:
       ZITADEL_DATABASE_POSTGRES_ADMIN_USERNAME: postgres
       ZITADEL_DATABASE_POSTGRES_ADMIN_PASSWORD: postgres
       ZITADEL_DATABASE_POSTGRES_ADMIN_SSL_MODE: disable
-      ZITADEL_EXTERNALSECURE: true
-      ZITADEL_LOG_LEVEL: info
-      ZITADEL_EXTERNAL_DOMAIN: ${ZITADEL_DOMAIN}
-      ZITADEL_EXTERNAL_PORT: 443
     restart: "always"
     networks:
       - "zitadel"
       - "proxy"
     image: "ghcr.io/zitadel/zitadel:stable"
-    command: 'start-from-init --steps /steps.yaml --masterkey "${ZITADEL_MASTERKEY}" --tlsMode external'
+    command: 'start-from-init --steps /steps.yaml --config /config.yaml --masterkey "${ZITADEL_MASTERKEY}" --tlsMode external'
     depends_on:
       db:
         condition: "service_healthy"
     volumes:
       - "./init-steps.yaml:/steps.yaml:ro"
+      - "./config.yaml:/config.yaml:ro"
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.zitadel.entrypoints=http"
