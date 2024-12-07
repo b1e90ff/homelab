@@ -1,23 +1,34 @@
 services:
   zitadel:
+    hostname: zitadel
     environment:
       ZITADEL_MASTERKEY: ${ZITADEL_MASTERKEY}
       ZITADEL_FIRSTINSTANCE_ORG_HUMAN_USERNAME: ${ZITADEL_FIRSTINSTANCE_ORG_HUMAN_USERNAME}
       ZITADEL_FIRSTINSTANCE_ORG_HUMAN_PASSWORD: ${ZITADEL_FIRSTINSTANCE_ORG_HUMAN_PASSWORD}
+      ZITADEL_DATABASE_POSTGRES_HOST: db
+      ZITADEL_DATABASE_POSTGRES_PORT: 5432
+      ZITADEL_DATABASE_POSTGRES_DATABASE: zitadel
+      ZITADEL_DATABASE_POSTGRES_USER_USERNAME: zitadel
+      ZITADEL_DATABASE_POSTGRES_USER_PASSWORD: zitadel
+      ZITADEL_DATABASE_POSTGRES_USER_SSL_MODE: disable
+      ZITADEL_DATABASE_POSTGRES_ADMIN_USERNAME: postgres
+      ZITADEL_DATABASE_POSTGRES_ADMIN_PASSWORD: postgres
+      ZITADEL_DATABASE_POSTGRES_ADMIN_SSL_MODE: disable
+      ZITADEL_EXTERNALSECURE: true
+      ZITADEL_LOG_LEVEL: info
+      ZITADEL_EXTERNAL_DOMAIN: ${ZITADEL_DOMAIN}
+      ZITADEL_EXTERNAL_PORT: 443
     restart: "always"
     networks:
       - "zitadel"
       - "proxy"
     image: "ghcr.io/zitadel/zitadel:stable"
-    command: 'start-from-init --config /example-zitadel-config.yaml --config /example-zitadel-secrets.yaml --steps /example-zitadel-init-steps.yaml --masterkey "${ZITADEL_MASTERKEY}" --tlsMode external'
+    command: 'start-from-init --steps /steps.yaml --masterkey "${ZITADEL_MASTERKEY}" --tlsMode external'
     depends_on:
-      certs:
-        condition: "service_completed_successfully"
+      db:
+        condition: "service_healthy"
     volumes:
-      - "./config.yaml:/example-zitadel-config.yaml:rw"
-      - "./secrets.yaml:/example-zitadel-secrets.yaml:rw"
-      - "./init-steps.yaml:/example-zitadel-init-steps.yaml:rw"
-      - "../data/zitadel/crdb-certs:/crdb-certs:rw"
+      - "./init-steps.yaml:/steps.yaml:ro"
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.zitadel.entrypoints=http"
@@ -38,40 +49,23 @@ services:
         max-size: "200k"
         max-file: "10"
 
-  certs:
-    image: "cockroachdb/cockroach:latest"
-    entrypoint: ["/bin/bash", "-c"]
-    command:
-      [
-        "cp /certs/* /zitadel-certs/ && cockroach cert create-client --overwrite --certs-dir /zitadel-certs/ --ca-key /zitadel-certs/ca.key zitadel_user && chmod -R 600 /zitadel-certs/node.key && chown -R $(id -u):$(id -g) /zitadel-certs/*",
-      ]
-    volumes:
-      - "../data/zitadel/certs:/certs:ro"  # Stelle sicher, dass dieser Pfad korrekt ist
-      - "zitadel-certs:/zitadel-certs:rw"
-    depends_on:
-      my-cockroach-db:
-        condition: "service_healthy"
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "200k"
-        max-file: "10"
-
-  my-cockroach-db:
+  db:
+    hostname: db
     restart: "always"
+    image: postgres:16-alpine
+    environment:
+      PGUSER: postgres
+      POSTGRES_PASSWORD: postgres
     networks:
       - "zitadel"
-    image: "cockroachdb/cockroach:latest"
-    command: "start-single-node --advertise-addr my-cockroach-db"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/health?ready=1"]
+      test: ["CMD-SHELL", "pg_isready", "-d", "zitadel", "-U", "postgres"]
       interval: "10s"
       timeout: "30s"
       retries: 5
       start_period: "20s"
     volumes:
-      - "../data/zitadel/crdb-certs:/cockroach/certs:rw"
-      - "../data/zitadel/crdb-data:/cockroach/cockroach-data:rw"
+      - "../data/zitadel/data:/var/lib/postgresql/data:rw"
     logging:
       driver: "json-file"
       options:
@@ -84,6 +78,4 @@ networks:
     external: true
 
 volumes:
-  certs:
-  zitadel-certs:
   data:
