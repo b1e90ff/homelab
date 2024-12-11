@@ -3,6 +3,7 @@ services:
     container_name: synapse
     image: docker.io/matrixdotorg/synapse:latest
     restart: unless-stopped
+    user: root
     environment:
       - SYNAPSE_CONFIG_PATH=/data/homeserver.yaml
     volumes:
