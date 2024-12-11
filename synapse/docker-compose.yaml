@@ -1,4 +1,3 @@
-version: '3'
 services:
   synapse:
     container_name: synapse
@@ -7,6 +6,7 @@ services:
     environment:
       - SYNAPSE_CONFIG_PATH=/data/homeserver.yaml
     volumes:
+      - ./homeserver.yaml:/data/homeserver.yaml
       - ../data/synapse:/data
     depends_on:
       - synapse-db
