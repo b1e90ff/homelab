@@ -23,7 +23,7 @@ database:
   name: psycopg2
   args:
     user: synapse_user
-    password: ${SYNAPSE_POSTGRES_PASSWORD}
+    password: ${SECRET_SYNAPSE_POSTGRES_PASSWORD}
     database: synapse
     host: synapse-db
     cp_min: 5
@@ -39,14 +39,7 @@ trusted_key_servers:
   - server_name: "matrix.org"
 enable_registration: false
 enable_guest_access: true
-default_power_level_content_override:
-  events_default: 0
-  state_default: 50
-  ban: 50
-  kick: 50
-  redact: 50
-  invite: 50
-  users_default: 0
+suppress_key_server_warning: true
 
 email:
   smtp_host: smtp.sendgrid.net
