@@ -43,6 +43,11 @@ jobs:
           ZITADEL_COCKROACH_USERNAME: ${{ secrets.ZITADEL_COCKROACH_USERNAME }}
           ZITADEL_DOMAIN: ${{ secrets.ZITADEL_DOMAIN }}
           ZITADEL_MASTERKEY: ${{ secrets.ZITADEL_MASTERKEY }}
+          SYNAPSE_POSTGRES_PASSWORD : ${{ secrets.SYNAPSE_POSTGRES_PASSWORD }}
+          SENDGRID_API_KEY : ${{ secrets.SENDGRID_API_KEY }}
+          SYNAPSE_FORM_SECRET : ${{ secrets.SYNAPSE_FORM_SECRET }}
+          SYNAPSE_MACAROON_SECRET_KEY : ${{ secrets.SYNAPSE_MACAROON_SECRET_KEY }}
+          SYNAPSE_REGISTRATION_SHARED_SECRET : ${{ secrets.SYNAPSE_REGISTRATION_SHARED_SECRET }}
         run: |
           chmod +x scripts/*.sh
           services=$(./scripts/get-services.sh "${{ github.event.inputs.services }}")

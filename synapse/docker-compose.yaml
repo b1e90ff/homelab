@@ -1,0 +1,46 @@
+version: '3'
+services:
+  synapse:
+    container_name: synapse
+    image: docker.io/matrixdotorg/synapse:latest
+    restart: unless-stopped
+    environment:
+      - SYNAPSE_CONFIG_PATH=/data/homeserver.yaml
+    volumes:
+      - ../data/synapse:/data
+    depends_on:
+      - synapse-db
+    networks:
+        synapse:
+        proxy:
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.synapse.entrypoints=http"
+      - "traefik.http.routers.synapse.rule=Host(`matrix.tat.systems`)"
+      - "traefik.http.middlewares.synapse-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.synapse.middlewares=synapse-https-redirect"
+      - "traefik.http.routers.synapse-secure.entrypoints=https"
+      - "traefik.http.routers.synapse-secure.rule=Host(`matrix.tat.systems`)"
+      - "traefik.http.routers.synapse-secure.tls=true"
+      - "traefik.http.routers.synapse-secure.service=synapse"
+      - "traefik.http.services.synapse.loadbalancer.server.port=8008"
+      - "traefik.docker.network=proxy"
+        
+  synapse-db:
+    image: docker.io/postgres:15-alpine
+    container_name: synapse-db
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=synapse_user
+      - POSTGRES_PASSWORD=${SYNAPSE_POSTGRES_PASSWORD}
+      - POSTGRES_DB=synapse
+      - POSTGRES_INITDB_ARGS=--encoding=UTF-8 --lc-collate=C --lc-ctype=C
+    volumes:
+      - ../data/synapse/synapse-db/schemas:/var/lib/postgresql/data
+    networks:
+      synapse:
+
+networks:
+  synapse:
+  proxy:
+    external: true
