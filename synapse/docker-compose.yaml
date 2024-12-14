@@ -1,9 +1,10 @@
 services:
   synapse-init:
     image: busybox
-    command: ['sh', '-c', 'chown -R 1000:1000 /data']
+    command: ['sh', '-c', 'chown -R 1000:1000 /data && chmod -R 777 /data']
     volumes:
       - synapse-data:/data
+      - synapse-logs:/logs  # Add volume for logs
     networks:
       - synapse
     depends_on:
@@ -20,6 +21,7 @@ services:
     volumes:
       - ./homeserver.yaml:/data/homeserver.yaml
       - synapse-data:/data
+      - synapse-logs:/logs  # Mount the logs volume
     depends_on:
       - synapse-init
       - synapse-db
@@ -84,3 +86,4 @@ networks:
 volumes:
   synapse-data:
   synapse-db-data:
+  synapse-logs:  # Define the logs volume
