@@ -37,19 +37,44 @@ form_secret: "${SECRET_SYNAPSE_FORM_SECRET}"
 signing_key_path: "/data/matrix.tat.systems.signing.key"
 trusted_key_servers:
   - server_name: "matrix.org"
-enable_registration: false
+enable_registration: true
+enable_registration_without_verification: true
 enable_guest_access: true
 suppress_key_server_warning: true
+
+turn_uris: ["turn:turn.tat.systems:3478?transport=udp", "turn:turn.tat.systems:3478?transport=tcp"]
+turn_shared_secret: "${SECRET_SYNAPSE_TURN_SECRET}"
+turn_user_lifetime: "86400000"  # 24 hours in milliseconds
+turn_allow_guests: true
+
+admin_api:
+  enabled: true
+
+oidc_providers:
+  - idp_id: zitadel
+    idp_name: Synapse
+    discover: true
+    issuer: "https://auth.tat.systems"
+    client_id: "${SECRET_SYNAPSE_ZITADEL_CLIENT_ID}"
+    pkce_method: "always"
+    scopes: ["openid", "profile", "email"]
+    authorization_endpoint: "https://auth.tat.systems/oauth/v2/authorize"
+    token_endpoint: "https://auth.tat.systems/oauth/v2/token"
+    userinfo_endpoint: "https://auth.tat.systems/oidc/v1/userinfo"
+    user_mapping_provider:
+      config:
+        display_name: "name"
+        email: "email"
+        avatar_url: "picture"
+        admin_roles: ["Admin"]
 
 email:
   smtp_host: smtp.sendgrid.net
   smtp_port: 587
-
   smtp_user: "apikey"
   smtp_pass: "${SECRET_SENDGRID_API_KEY}"
 
   require_transport_security: true
-
   notif_from: "<noreply@tat.systems>"
   app_name: TatSystems
   notif_for_new_users: false

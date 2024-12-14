@@ -48,6 +48,9 @@ jobs:
           SYNAPSE_FORM_SECRET : ${{ secrets.SYNAPSE_FORM_SECRET }}
           SYNAPSE_MACAROON_SECRET_KEY : ${{ secrets.SYNAPSE_MACAROON_SECRET_KEY }}
           SYNAPSE_REGISTRATION_SHARED_SECRET : ${{ secrets.SYNAPSE_REGISTRATION_SHARED_SECRET }}
+          SYNAPSE_TURN_SECRET : ${{ secrets.SYNAPSE_TURN_SECRET }}
+          SYNAPSE_ZITADEL_CLIENT_ID : ${{ secrets.SYNAPSE_ZITADEL_CLIENT_ID }}
+          TURN_PUBLIC_IP : ${{ secrets.TURN_PUBLIC_IP }}
         run: |
           chmod +x scripts/*.sh
           services=$(./scripts/get-services.sh "${{ github.event.inputs.services }}")

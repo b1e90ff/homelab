@@ -24,8 +24,8 @@ services:
       - synapse-init
       - synapse-db
     networks:
-        synapse:
-        proxy:
+      - synapse
+      - proxy
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.synapse.entrypoints=http"
@@ -51,7 +51,30 @@ services:
     volumes:
       - synapse-db-data:/var/lib/postgresql/data
     networks:
-      synapse:
+      - synapse
+
+  turn:
+    image: coturn/coturn:latest
+    container_name: turn
+    ports:
+      - "3478:3478/udp"
+      - "3478:3478/tcp"
+    environment:
+      - TURN_SECRET=${SYNAPSE_TURN_SECRET}
+      - LISTENING_PORT=3478
+      - RELAY_IP=${TURN_PUBLIC_IP}
+      - MIN_PORT=49152
+      - MAX_PORT=65535
+    command: >
+      --lt-cred-mech
+      --use-auth-secret
+      --static-auth-secret=${SYNAPSE_TURN_SECRET}
+      --realm=matrix.tat.systems
+      --no-tls
+      --no-dtls
+    networks:
+      - synapse
+      - proxy
 
 networks:
   synapse:
