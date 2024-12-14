@@ -1,3 +1,4 @@
+
 # Configuration file for Synapse.
 #
 # This is a YAML file: see [1] for a quick introduction. Note in particular
@@ -39,7 +40,7 @@ trusted_key_servers:
   - server_name: "matrix.org"
 enable_registration: true
 enable_registration_without_verification: true
-allow_guest_access: true 
+enable_guest_access: true
 suppress_key_server_warning: true
 
 turn_uris: ["turn:turn.tat.systems:3478?transport=udp", "turn:turn.tat.systems:3478?transport=tcp"]
@@ -78,29 +79,3 @@ email:
   notif_from: "<noreply@tat.systems>"
   app_name: TatSystems
   notif_for_new_users: false
-
-allow_room_previews: true  # Enable room previews
-default_room_version: "11"  # Set the default room version to 11
-
-rooms:
-  default_power_level_content_override:
-    events_default: 0
-    state_default: 50
-    ban: 50
-    kick: 50
-    redact: 50
-    invite: 50
-    historical: 0
-  default_state_events:
-    - type: "m.room.guest_access"
-      state_key: ""
-      content:
-        guest_access: "can_join"
-    - type: "m.room.join_rules"
-      state_key: ""
-      content:
-        join_rule: "public"
-    - type: "m.room.history_visibility"
-      state_key: ""
-      content:
-        history_visibility: "world_readable"
