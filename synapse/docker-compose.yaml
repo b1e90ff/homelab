@@ -9,6 +9,15 @@ services:
     depends_on:
       - synapse-db
 
+  install-guest-module:
+    image: ghcr.io/nordeck/synapse-guest-module:latest
+    volumes:
+      - synapse-modules:/modules
+    networks:
+      - synapse
+    depends_on:
+      - synapse-init
+
   synapse:
     container_name: synapse
     image: docker.io/matrixdotorg/synapse:latest
@@ -17,12 +26,15 @@ services:
       - SYNAPSE_CONFIG_PATH=/data/homeserver.yaml
       - UID=1000
       - GID=1000
+      - PYTHONPATH=/modules  # Tell python to read the modules from the `/modules` directory
     volumes:
       - ./homeserver.yaml:/data/homeserver.yaml
       - synapse-data:/data
+      - synapse-modules:/modules  # Mount the `synapse-modules` volume
     depends_on:
       - synapse-init
       - synapse-db
+      - install-guest-module
     networks:
       - synapse
       - proxy
@@ -38,7 +50,7 @@ services:
       - "traefik.http.routers.synapse-secure.service=synapse"
       - "traefik.http.services.synapse.loadbalancer.server.port=8008"
       - "traefik.docker.network=proxy"
-        
+
   synapse-db:
     image: docker.io/postgres:15-alpine
     container_name: synapse-db
@@ -84,3 +96,4 @@ networks:
 volumes:
   synapse-data:
   synapse-db-data:
+  synapse-modules:  # Define the `synapse-modules` volume

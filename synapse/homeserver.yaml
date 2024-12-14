@@ -1,80 +1,83 @@
-# Configuration file for Synapse.
+# Konfigurationsdatei für Dendrite
 #
-# This is a YAML file: see [1] for a quick introduction. Note in particular
-# that *indentation is important*: all the elements of a list or dictionary
-# should have the same indentation.
+# Dies ist eine YAML-Datei: siehe [1] für eine kurze Einführung. Beachten Sie insbesondere,
+# dass *Einrückungen wichtig sind*: alle Elemente einer Liste oder eines Wörterbuchs
+# sollten die gleiche Einrückung haben.
 #
 # [1] https://docs.ansible.com/ansible/latest/reference_appendices/YAMLSyntax.html
 #
-# For more information on how to configure Synapse, including a complete accounting of
-# each option, go to docs/usage/configuration/config_documentation.md or
-# https://element-hq.github.io/synapse/latest/usage/configuration/config_documentation.html
-server_name: "matrix.tat.systems"
-pid_file: /data/homeserver.pid
-listeners:
-  - port: 8008
-    tls: false
-    type: http
-    x_forwarded: true
-    resources:
-      - names: [client, federation]
-        compress: false
-database:
-  name: psycopg2
-  args:
-    user: synapse_user
-    password: ${SECRET_SYNAPSE_POSTGRES_PASSWORD}
-    database: synapse
-    host: synapse-db
-    cp_min: 5
-    cp_max: 10
-log_config: "/data/matrix.tat.systems.log.config"
-media_store_path: /data/media_store
-registration_shared_secret: "${SECRET_SYNAPSE_REGISTRATION_SHARED_SECRET}"
-report_stats: false
-macaroon_secret_key: "${SECRET_SYNAPSE_MACAROON_SECRET_KEY}"
-form_secret: "${SECRET_SYNAPSE_FORM_SECRET}"
-signing_key_path: "/data/matrix.tat.systems.signing.key"
-trusted_key_servers:
-  - server_name: "matrix.org"
-enable_registration: true
-enable_registration_without_verification: true
-enable_guest_access: true
-suppress_key_server_warning: true
+# Weitere Informationen zur Konfiguration von Dendrite finden Sie unter
+# https://github.com/matrix-org/dendrite/blob/main/docs/dendrite.yaml
+global:
+  server_name: "matrix.tat.systems"
+  private_key: /data/matrix.tat.systems.key
+  trusted_key_servers:
+    - server_name: "matrix.org"
+      key_validity_period: 24h
+  database:
+    connection_string: "postgres://synapse_user:${SECRET_SYNAPSE_POSTGRES_PASSWORD}@synapse-db/synapse?sslmode=disable"
+  media:
+    base_path: /data/media_store
+  registration:
+    enabled: true
+    shared_secret: "${SECRET_SYNAPSE_REGISTRATION_SHARED_SECRET}"
+  turn:
+    turn_uris: ["turn:turn.tat.systems:3478?transport=udp", "turn:turn.tat.systems:3478?transport=tcp"]
+    shared_secret: "${SECRET_SYNAPSE_TURN_SECRET}"
+    user_lifetime: "24h"
+    allow_guests: true
+  email:
+    smtp:
+      host: smtp.sendgrid.net
+      port: 587
+      username: "apikey"
+      password: "${SECRET_SENDGRID_API_KEY}"
+      require_tls: true
+    from: "<noreply@tat.systems>"
+    app_name: TatSystems
+  logging:
+    level: info
+    format: text
+    path: /data/matrix.tat.systems.log
 
-turn_uris: ["turn:turn.tat.systems:3478?transport=udp", "turn:turn.tat.systems:3478?transport=tcp"]
-turn_shared_secret: "${SECRET_SYNAPSE_TURN_SECRET}"
-turn_user_lifetime: "86400000"  # 24 hours in milliseconds
-turn_allow_guests: true
+client_api:
+  listen: "0.0.0.0:8008"
+  registration_disabled: false
+  registration_shared_secret: "${SECRET_SYNAPSE_REGISTRATION_SHARED_SECRET}"
+  allow_guest_access: true
+  enable_registration_without_verification: true
 
-admin_api:
-  enabled: true
+federation_api:
+  listen: "0.0.0.0:8448"
 
-oidc_providers:
-  - idp_id: zitadel
-    idp_name: Synapse
-    discover: true
-    issuer: "https://auth.tat.systems"
-    client_id: "${SECRET_SYNAPSE_ZITADEL_CLIENT_ID}"
-    pkce_method: "always"
-    scopes: ["openid", "profile", "email"]
-    authorization_endpoint: "https://auth.tat.systems/oauth/v2/authorize"
-    token_endpoint: "https://auth.tat.systems/oauth/v2/token"
-    userinfo_endpoint: "https://auth.tat.systems/oidc/v1/userinfo"
-    user_mapping_provider:
-      config:
-        display_name: "name"
-        email: "email"
-        avatar_url: "picture"
-        admin_roles: ["Admin"]
+media_api:
+  listen: "0.0.0.0:8008"
 
-email:
-  smtp_host: smtp.sendgrid.net
-  smtp_port: 587
-  smtp_user: "apikey"
-  smtp_pass: "${SECRET_SENDGRID_API_KEY}"
+sync_api:
+  listen: "0.0.0.0:8008"
 
-  require_transport_security: true
-  notif_from: "<noreply@tat.systems>"
-  app_name: TatSystems
-  notif_for_new_users: false
+key_server:
+  listen: "0.0.0.0:8008"
+
+room_server:
+  listen: "0.0.0.0:8008"
+
+user_api:
+  listen: "0.0.0.0:8008"
+  oidc:
+    enabled: true
+    providers:
+      - idp_id: zitadel
+        idp_name: Synapse
+        issuer: "https://auth.tat.systems"
+        client_id: "${SECRET_SYNAPSE_ZITADEL_CLIENT_ID}"
+        client_secret: "${SECRET_SYNAPSE_ZITADEL_CLIENT_SECRET}"
+        scopes: ["openid", "profile", "email"]
+        authorization_endpoint: "https://auth.tat.systems/oauth/v2/authorize"
+        token_endpoint: "https://auth.tat.systems/oauth/v2/token"
+        userinfo_endpoint: "https://auth.tat.systems/oidc/v1/userinfo"
+        user_mapping:
+          display_name: "name"
+          email: "email"
+          avatar_url: "picture"
+          admin_roles: ["Admin"]
