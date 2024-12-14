@@ -26,11 +26,11 @@ services:
       - SYNAPSE_CONFIG_PATH=/data/homeserver.yaml
       - UID=1000
       - GID=1000
-      - PYTHONPATH=/modules  # Tell python to read the modules from the `/modules` directory
+      - PYTHONPATH=/modules
     volumes:
       - ./homeserver.yaml:/data/homeserver.yaml
       - synapse-data:/data
-      - synapse-modules:/modules  # Mount the `synapse-modules` volume
+      - synapse-modules:/modules
     depends_on:
       - synapse-init
       - synapse-db
